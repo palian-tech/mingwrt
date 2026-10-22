@@ -1277,6 +1277,8 @@ _chgsign
 _clearfp
 _controlfp
 _copysign
+_divls
+_divlu
 _ecvt
 _fcloseall
 _fcvt
@@ -1313,6 +1315,8 @@ _ltow
 _mbmemset
 _memccpy
 _memicmp
+_modls
+_modlu
 _msize
 _nextafter
 _purecall

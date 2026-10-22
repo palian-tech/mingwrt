@@ -38,6 +38,10 @@ extern "C" {
 #endif
 #elif defined (__arm__)
 # define _JBLEN 11
+#elif defined (__sh__)
+  /* coredll's setjmp on SH-4.  The layout is not documented; this is
+     generously sized for r8-r15, pr and the FPU state.  */
+# define _JBLEN 32
 #endif
 
 #define _JBTYPE int
