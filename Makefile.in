@@ -334,7 +334,7 @@ libmingwthrd.a: crtmt.o mingwthrd.def
 # Special rule because this target has a leading underscore
 # where others (ARM) do not.
 #
-ifeq ($(target_alias),i386-mingw32ce)
+ifneq (,$(filter i386-mingw32ce sh4-mingw32ce,$(target_alias)))
 DLLSTARTUPSYM=_DllMainCRTStartup
 else
 DLLSTARTUPSYM=DllMainCRTStartup
