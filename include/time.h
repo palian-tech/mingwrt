@@ -77,6 +77,20 @@ struct tm
 #define _TM_DEFINED
 #endif
 
+#ifndef _TIMESPEC_DEFINED
+/*
+ * C11 struct timespec. Windows CE has no function that takes it, but
+ * libstdc++ (GCC 15 and later) uses it for this_thread::sleep_for,
+ * which it implements with Sleep().
+ */
+struct timespec
+{
+	time_t	tv_sec;		/* Seconds */
+	long	tv_nsec;	/* Nanoseconds */
+};
+#define _TIMESPEC_DEFINED
+#endif
+
 #ifdef	__cplusplus
 extern "C" {
 #endif
