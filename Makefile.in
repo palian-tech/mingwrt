@@ -409,12 +409,23 @@ libmoldname90.a libmoldname90d.a: moldname-msvcrt.def $(MOLD_OBJS)
 	$(AR) rc $@ $(MOLD_OBJS)
 	$(RANLIB) $@
 
-libceoldname.a: moldname-coredll.def $(MOLD_OBJS)
+# sh4-mingw32ce: coredll's floating-point functions take float and double
+# in FPU registers; thunks replace their jump stubs (coredll_fpu.S).
+ifeq ($(target_alias),sh4-mingw32ce)
+CE_FPU = CC="$(CC)" AR="$(AR)" NM="$(NM)" OBJCOPY="$(OBJCOPY)" \
+	$(SHELL) $(srcdir)/coredll_fpu.sh
+else
+CE_FPU = :
+endif
+CE_FPU_SRCS = coredll_fpu.S coredll_fpu.lst coredll_fpu.sh
+
+libceoldname.a: moldname-coredll.def $(MOLD_OBJS) $(CE_FPU_SRCS)
 	$(DLLTOOL) --as $(AS) -k -U	\
 		--dllname COREDLL.dll	\
 		--def moldname-coredll.def	\
 		--output-lib $@
 	$(AR) rc $@ $(MOLD_OBJS)
+	$(CE_FPU) $@ ceoldname $(srcdir)
 	$(RANLIB) $@
 
 # These special rules are necessary...
@@ -625,8 +636,8 @@ force:
 #
 # Dependencies
 #
-libcoredll.a: coredll.def
-libcoredll6.a: coredll6.def
+libcoredll.a: coredll.def $(CE_FPU_SRCS)
+libcoredll6.a: coredll6.def $(CE_FPU_SRCS)
 libcrtdll.a: crtdll.def
 libmsvcrt.a: msvcrt.def
 libmsvcrtd.a: msvcrtd.def
@@ -688,6 +699,7 @@ lib%.a: %.def
 	  fi; done; \
 	test -n "$$repl" && $(AR) rcs $@ $$repl; \
 	$(RM) $$tmpfiles
+	case $@ in libcoredll*.a) $(CE_FPU) $@ coredll $(srcdir);; esac
 
 libmsvcrt.a  libmsvcrtd.a:  ofmt_stub.o
 libmsvcr70.a libmsvcr70d.a: ofmt_stub.o
