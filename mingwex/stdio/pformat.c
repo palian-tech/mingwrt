@@ -841,6 +841,21 @@ char *__pformat_ecvt( long double x, int precision, int *dp, int *sign )
       ++retval; *sign = 1;
     }
   }
+  else
+  {
+    /* `ecvt()' pads the digits with zeros to `precision'; `__gdtoa()'
+     * in mode 2 does not, and `%g' relies on that to drop
+     * non-significant trailing zeros, (the `%e' and `%#g' handlers
+     * restore the zeros they need).  Strip them, keeping at least
+     * one digit, and report a zero as "0", with the radix point
+     * after it, as `__gdtoa()' does.
+     */
+    char *p = retval + strlen( retval );
+    while( (p > retval + 1) && (p[-1] == '0') )
+      *--p = '\0';
+    if( *retval == '0' )
+      *dp = 1;
+  }
   return retval;
 }
 
