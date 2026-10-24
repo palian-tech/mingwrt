@@ -11,7 +11,7 @@
 # Uses CC, AR, NM and OBJCOPY from the environment.
 set -e
 lib=$1 id=$2 srcdir=$3
-tmp=fpu-$id.tmp
+tmp=fpu-$lib.tmp
 rm -rf $tmp && mkdir $tmp
 syms=`$NM -A $lib`
 grep -v '^#' $srcdir/coredll_fpu.lst | while read l name kind imp; do
