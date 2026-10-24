@@ -10,6 +10,11 @@
 # Where the thunk calls another function (float functions, fabsf), the
 # import member is removed.
 #
+# For -m4-single (CC defines __SH4_SINGLE__), which calls coredll with
+# coredll's own convention, only the float functions (kinds F_*, I_F,
+# I_FF) are replaced, by the C functions of coredll_fpu_single.c, and
+# their import members removed.
+#
 # Running it again on a library that has the thunks changes nothing, so
 # it can also be applied to another libcoredll.a installed later (w32api's).
 #
@@ -20,8 +25,22 @@ case $lib in /*) ;; *) lib=`pwd`/$lib ;; esac
 tmp=`pwd`/fpu-`basename $lib`.tmp
 rm -rf $tmp && mkdir $tmp
 syms=`$NM -A $lib`
+single=`echo __SH4_SINGLE__ | $CC -E -P -x c - | tr -d ' '`
 grep -v '^#' $srcdir/coredll_fpu.lst | while read l name kind imp; do
   test "$l" = "$id" || continue
+  if test "$single" = 1; then
+    case $kind in F_*|I_F|I_FF) ;; *) continue ;; esac
+    member=`echo "$syms" | sed -n "s/^[^:]*:\([^:]*\):[0-9a-f]* T _$name\$/\1/p"`
+    case $member in
+      "") echo "coredll_fpu.sh: $lib has no _$name, skipped"; continue ;;
+      fpu_*) continue ;;
+    esac
+    $AR d $lib $member
+    $CC -O2 -fno-builtin -c -DNAME=$name -DIMP=$imp -DKIND_$kind \
+      $srcdir/coredll_fpu_single.c -o $tmp/fpu_$name.o
+    $AR r $lib $tmp/fpu_$name.o
+    continue
+  fi
   member=`echo "$syms" | sed -n "s/^[^:]*:\([^:]*\):[0-9a-f]* T _$name\$/\1/p"`
   case $member in
     "") echo "coredll_fpu.sh: $lib has no _$name, skipped"; continue ;;

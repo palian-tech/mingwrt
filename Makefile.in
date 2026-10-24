@@ -410,14 +410,15 @@ libmoldname90.a libmoldname90d.a: moldname-msvcrt.def $(MOLD_OBJS)
 	$(RANLIB) $@
 
 # sh4-mingw32ce: coredll's floating-point functions take float and double
-# in FPU registers; thunks replace their jump stubs (coredll_fpu.S).
+# in FPU registers; thunks replace their jump stubs (coredll_fpu.S).  For
+# -m4-single, only the float functions are replaced (coredll_fpu_single.c).
 ifeq ($(target_alias),sh4-mingw32ce)
 CE_FPU = CC="$(CC)" AR="$(AR)" NM="$(NM)" OBJCOPY="$(OBJCOPY)" \
 	$(SHELL) $(srcdir)/coredll_fpu.sh
 else
 CE_FPU = :
 endif
-CE_FPU_SRCS = coredll_fpu.S coredll_fpu.lst coredll_fpu.sh
+CE_FPU_SRCS = coredll_fpu.S coredll_fpu.lst coredll_fpu.sh coredll_fpu_single.c
 
 libceoldname.a: moldname-coredll.def $(MOLD_OBJS) $(CE_FPU_SRCS)
 	$(DLLTOOL) --as $(AS) -k -U	\
