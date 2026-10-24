@@ -7,6 +7,8 @@
 # coredll_fpu.S, as listed in coredll_fpu.lst.  The jump stub's symbol is
 # renamed so that the thunk's definition is the only one; the import
 # pointer __imp__NAME stays in the import member, which the thunk pulls in.
+# Where the thunk calls another function (float functions, fabsf), the
+# import member is removed.
 #
 # Running it again on a library that has the thunks changes nothing, so
 # it can also be applied to another libcoredll.a installed later (w32api's).
@@ -25,9 +27,16 @@ grep -v '^#' $srcdir/coredll_fpu.lst | while read l name kind imp; do
     "") echo "coredll_fpu.sh: $lib has no _$name, skipped"; continue ;;
     fpu_*) continue ;;
   esac
-  (cd $tmp && $AR x $lib $member)
-  $OBJCOPY --redefine-sym _$name=__coredll_fpu_stub_$name $tmp/$member
-  $AR r $lib $tmp/$member
+  if test "$imp" = "$name"; then
+    (cd $tmp && $AR x $lib $member)
+    $OBJCOPY --redefine-sym _$name=__coredll_fpu_stub_$name $tmp/$member
+    $AR r $lib $tmp/$member
+  else
+    # The thunk calls another function (sqrtf -> sqrt): drop the import
+    # member, so that ld cannot pull it in through __imp__NAME and import
+    # a function that coredll may not export (CE 5.0 SH-4 has no sqrtf).
+    $AR d $lib $member
+  fi
   $CC -c -x assembler-with-cpp -DNAME=_$name -DIMP=__imp__$imp -DKIND=$kind \
     $srcdir/coredll_fpu.S -o $tmp/fpu_$name.o
   $AR r $lib $tmp/fpu_$name.o
