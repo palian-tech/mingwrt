@@ -8,19 +8,24 @@
 # renamed so that the thunk's definition is the only one; the import
 # pointer __imp__NAME stays in the import member, which the thunk pulls in.
 #
+# Running it again on a library that has the thunks changes nothing, so
+# it can also be applied to another libcoredll.a installed later (w32api's).
+#
 # Uses CC, AR, NM and OBJCOPY from the environment.
 set -e
 lib=$1 id=$2 srcdir=$3
-tmp=fpu-$lib.tmp
+case $lib in /*) ;; *) lib=`pwd`/$lib ;; esac
+tmp=`pwd`/fpu-`basename $lib`.tmp
 rm -rf $tmp && mkdir $tmp
 syms=`$NM -A $lib`
 grep -v '^#' $srcdir/coredll_fpu.lst | while read l name kind imp; do
   test "$l" = "$id" || continue
   member=`echo "$syms" | sed -n "s/^[^:]*:\([^:]*\):[0-9a-f]* T _$name\$/\1/p"`
-  if test -z "$member"; then
-    echo "coredll_fpu.sh: $lib has no _$name, skipped"; continue
-  fi
-  (cd $tmp && $AR x ../$lib $member)
+  case $member in
+    "") echo "coredll_fpu.sh: $lib has no _$name, skipped"; continue ;;
+    fpu_*) continue ;;
+  esac
+  (cd $tmp && $AR x $lib $member)
   $OBJCOPY --redefine-sym _$name=__coredll_fpu_stub_$name $tmp/$member
   $AR r $lib $tmp/$member
   $CC -c -x assembler-with-cpp -DNAME=_$name -DIMP=__imp__$imp -DKIND=$kind \
